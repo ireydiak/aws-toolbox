@@ -1,7 +1,6 @@
 import { createSignal, For, onMount, Show } from 'solid-js';
-import { invoke } from "@tauri-apps/api/core";
 import { useNavigate } from '@solidjs/router';
-import { TauriCmds } from '../utils/tauri.ts';
+import {TauriCmds, tryInvoke} from '../utils/tauri.ts';
 import "../App.css";
 import { AppRoutes } from '../utils/routes.ts'
 
@@ -12,27 +11,24 @@ function AccountsPage() {
     const [loading, setLoading] = createSignal(true);
 
     onMount(async () => {
-        try {
-            const profiles = await invoke(TauriCmds.ListAWSProfiles) as string[];
-            setProfiles(profiles);
-            setLoading(false)
-        } catch (e) {
-            console.log(e);
-            setError(e instanceof Error ? e.message : "Unknown error encountered");
-            setLoading(false)
+        const result = await tryInvoke(TauriCmds.ListAWSProfiles)
+        if (!result.value) {
+            setError(result.errors)
+        } else {
+            setProfiles(result.value as string[]);
         }
+        setLoading(false);
     })
 
     async function loadProfile(profile: string) {
-        try {
-            setLoading(true);
-            await invoke(TauriCmds.LoginAWSProfile, { profile });
+        setLoading(true);
+        const result = await tryInvoke(TauriCmds.LoginAWSProfile, { profile });
+        if (!result.value) {
+            setError(result.errors);
+        } else {
             navigate(AppRoutes.FunctionsPage);
-        } catch(e) {
-            console.error(e);
-            setError(e instanceof Error ? e.message : "Unknown error encountered")
-            setLoading(false)
         }
+        setLoading(false);
     }
 
     return (

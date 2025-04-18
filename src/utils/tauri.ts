@@ -16,7 +16,12 @@ export async function tryInvoke(cmd: TauriCmd, args?: InvokeArgs, options?: Invo
         return Ok(resp)
     } catch(e) {
         console.error(e)
-        const errMsg = e instanceof Error ? e.message : "Unknown error";
-        return Err(errMsg, 500)
+        if (typeof e === 'string') {
+            return Err(e, 500)
+        } else if (e instanceof Error) {
+            return Err(e.message, 500)
+        } else {
+            return Err("Unknown error", 500)
+        }
     }
 }

@@ -15,6 +15,7 @@ function App() {
           setProfiles(profiles);
           setLoading(false)
       } catch (e) {
+          console.log(typeof e);
           console.log(e);
           setError(e instanceof Error ? e.message : "Unknown error encountered");
           setLoading(false)
