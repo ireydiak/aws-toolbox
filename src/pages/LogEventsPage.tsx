@@ -27,7 +27,7 @@ export function LogEventsPage({ logGroupName }: LogEventPageProps) {
         }) as Option<LogEvent[]>
         console.log(JSON.stringify(result))
         if (!result.value) {
-            setError(result.errors)
+            setError(result.error)
         } else {
             setLogs(result.value)
         }

@@ -171,11 +171,9 @@ fn default_aws_config_location() -> Result<String, String> {
 }
 
 fn init_store(app: &mut App) -> Result<(), String> {
-    println!("init_store called");
     let store = app.store("settings.json")
         .map_err(|e| format!("Failed to access store: {}", e))?;
 
-    println!("store loaded {}", store.has("AWS_CONFIG_LOCATION"));
     if !store.has("AWS_CONFIG_LOCATION") {
         println!("store does not have key");
         let location = default_aws_config_location()
@@ -184,6 +182,42 @@ fn init_store(app: &mut App) -> Result<(), String> {
         store.set("AWS_CONFIG_LOCATION", location.to_string());
         store.save().map_err(|e| format!("Failed to save configuration file: {}", e))?;
     }
+
+    Ok(())
+}
+
+#[tauri::command]
+fn get_aws_config_location(app: AppHandle) -> Result<String, String> {
+    let store = app.store("settings.json")
+        .map_err(|e| format!("Failed to access store: {}", e))?;
+
+    if let Some(value) = store.get("AWS_CONFIG_LOCATION") {
+        if let Some(path) = value.as_str() {
+            return Ok(path.to_string());
+        }
+    }
+
+    default_aws_config_location()
+}
+
+#[tauri::command]
+fn update_aws_config_location(path: &str, app: AppHandle) -> Result<(), String> {
+    let store = app.store("settings.json")
+        .map_err(|e| format!("Failed to access store: {}", e))?;
+
+    let homedir = dirs::home_dir().ok_or_else(||"Failed getting the home directory")?;
+    let home_str = homedir.to_string_lossy();
+
+    let new_path = if path.starts_with("~") {
+        path.replacen("~", &home_str, 1)
+    } else if path.contains("$HOME") {
+        path.replace("$HOME", &home_str)
+    } else {
+        path.to_string()
+    };
+
+    store.set("AWS_CONFIG_LOCATION", new_path.to_string());
+    store.save().map_err(|e| format!("Failed to save configuration file: {}", e))?;
 
     Ok(())
 }
@@ -204,6 +238,8 @@ pub fn run() {
             login_aws_profile,
             list_lambda_functions,
             list_function_logs,
+            get_aws_config_location,
+            update_aws_config_location,
         ])
         .setup(|app| {
             if let Err(e) = init_store(app) {

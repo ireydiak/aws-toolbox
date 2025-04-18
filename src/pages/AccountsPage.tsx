@@ -13,7 +13,7 @@ function AccountsPage() {
     onMount(async () => {
         const result = await tryInvoke(TauriCmds.ListAWSProfiles)
         if (!result.value) {
-            setError(result.errors)
+            setError(result.error)
         } else {
             setProfiles(result.value as string[]);
         }
@@ -24,7 +24,7 @@ function AccountsPage() {
         setLoading(true);
         const result = await tryInvoke(TauriCmds.LoginAWSProfile, { profile });
         if (!result.value) {
-            setError(result.errors);
+            setError(result.error);
         } else {
             navigate(AppRoutes.FunctionsPage);
         }
